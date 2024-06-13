@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>テキストボックスと文字数カウント・置換機能・コピー機能</title>
+    <style>
+        textarea {
+            width: 100%;
+            height: 100px;
+            resize: both;
+        }
+        .container {
+            margin-bottom: 20px;
+        }
+        .info {
+            display: flex;
+            align-items: center;
+        }
+        .info span {
+            margin-right: 10px;
+        }
+    </style>
+    <script>
+        function countCharacters(textArea, counter) {
+            counter.innerText = textArea.value.length + "文字";
+        }
+
+        function replaceText(textArea, findReplacePairs) {
+            findReplacePairs.forEach(pair => {
+                const regExp = new RegExp(pair.find, 'g');
+                textArea.value = textArea.value.replace(regExp, pair.replace);
+            });
+            const counter = document.getElementById(textArea.dataset.counterId);
+            if (counter) {
+                countCharacters(textArea, counter);
+            }
+        }
+
+        function copyToClipboard(textArea) {
+            textArea.select();
+            document.execCommand('copy');
+        }
+
+        function countSelectedCharacters(textArea, selectionCounter) {
+            const selectedText = textArea.value.substring(textArea.selectionStart, textArea.selectionEnd);
+            selectionCounter.innerText = selectedText.length + "文字選択中";
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const textareas = document.querySelectorAll("textarea");
+            textareas.forEach(textarea => {
+                const counter = document.getElementById(textarea.dataset.counterId);
+                const selectionCounter = document.getElementById(textarea.dataset.selectionCounterId);
+                if (counter) {
+                    textarea.addEventListener("input", () => countCharacters(textarea, counter));
+                    countCharacters(textarea, counter); // 初期文字数カウント
+                }
+                if (selectionCounter) {
+                    textarea.addEventListener("select", () => countSelectedCharacters(textarea, selectionCounter));
+                    textarea.addEventListener("keyup", () => countSelectedCharacters(textarea, selectionCounter));
+                }
+            });
+
+            document.getElementById("replaceButton").addEventListener("click", function() {
+                const replaceOption = document.getElementById("replaceOption").value;
+                let findReplacePairs = [];
+
+                switch (replaceOption) {
+                    case "comma-period":
+                        findReplacePairs = [
+                            { find: "，", replace: "," },
+                            { find: "．", replace: "." },
+                            { find: "、", replace: "," },
+                            { find: "。", replace: "." }
+                        ];
+                        break;
+                    case "kanji-period":
+                        findReplacePairs = [
+                            { find: ",", replace: "、" },
+                            { find: "\\.", replace: "。" },
+                            { find: "，", replace: "、" },
+                            { find: "．", replace: "。" }
+                        ];
+                        break;
+                    case "japanese-comma":
+                        findReplacePairs = [
+                            { find: ",", replace: "，" },
+                            { find: "\\.", replace: "．" },
+                            { find: "、", replace: "，" },
+                            { find: "。", replace: "．" }
+                        ];
+                        break;
+                }
+
+                textareas.forEach(textarea => replaceText(textarea, findReplacePairs));
+            });
+
+            const copyButtons = document.querySelectorAll(".copyButton");
+            copyButtons.forEach(button => {
+                button.addEventListener("click", function() {
+                    const textarea = document.getElementById(button.dataset.textareaId);
+                    copyToClipboard(textarea);
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <label for="initial">記述内容</label><br>
+        <textarea id="initial" data-counter-id="initialCounter" data-selection-counter-id="initialSelectionCounter"></textarea>
+    </div>
+    <div class="container">
+        <label for="original">元の文章</label><br>
+        <textarea id="original" data-counter-id="originalCounter" data-selection-counter-id="originalSelectionCounter"></textarea>
+        <div class="info">
+            <span id="originalCounter">0文字</span>
+            <span id="originalSelectionCounter">0文字選択中</span>
+            <button class="copyButton" data-textarea-id="original">コピー</button>
+        </div>
+    </div>
+    <div class="container">
+        <label for="new">新しい文章</label><br>
+        <textarea id="new" data-counter-id="newCounter" data-selection-counter-id="newSelectionCounter"></textarea>
+        <div class="info">
+            <span id="newCounter">0文字</span>
+            <span id="newSelectionCounter">0文字選択中</span>
+            <button class="copyButton" data-textarea-id="new">コピー</button>
+        </div>
+    </div>
+    <div class="container">
+        <label for="memo">メモ</label><br>
+        <textarea id="memo" data-counter-id="memoCounter" data-selection-counter-id="memoSelectionCounter"></textarea>
+        <div class="info">
+            <span id="memoCounter">0文字</span>
+            <span id="memoSelectionCounter">0文字選択中</span>
+            <button class="copyButton" data-textarea-id="memo">コピー</button>
+        </div>
+    </div>
+    <div class="container">
+        <label for="replaceOption">置換後の文字</label>
+        <select id="replaceOption">
+            <option value="comma-period">, .</option>
+            <option value="kanji-period">、 。</option>
+            <option value="japanese-comma">， ．</option>
+        </select>
+        <button id="replaceButton">置換する</button>
+    </div>
+</body>
+</html>
